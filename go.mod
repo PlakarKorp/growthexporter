@@ -1,6 +1,6 @@
 module poc_prom
 
-go 1.24.4
+go 1.24.1
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
