@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ func fetchRepoStats(owner, repo string, metrics map[string]prometheus.Gauge, cli
 		repository, _, err := client.Repositories.Get(ctx, owner, repo)
 		if err != nil {
 			log.Printf("Error fetching GitHub data for %s/%s: %v", owner, repo, err)
-			time.Sleep(1 * time.Minute)
+			time.Sleep(5 * time.Minute)
 			continue
 		}
 
@@ -71,7 +72,6 @@ func fetchRepoStats(owner, repo string, metrics map[string]prometheus.Gauge, cli
 			metrics["pullRequestsOpen"].Set(float64(len(prs)))
 			prNumber = len(prs)
 		}
-
 
 		metrics["stars"].Set(float64(repository.GetStargazersCount()))
 		metrics["watchers"].Set(float64(repository.GetWatchersCount()))
@@ -108,14 +108,19 @@ func fetchRepoStats(owner, repo string, metrics map[string]prometheus.Gauge, cli
 			metrics["lastCommitTimestamp"].Set(float64(commits[0].Commit.Committer.GetDate().Unix()))
 		}
 
-		time.Sleep(1 * time.Minute)
+		time.Sleep(5 * time.Minute)
 	}
 }
 
 func main() {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		os.Exit(1)
+	}
+
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: "<YOUR_GITHUB_ACCESS_TOKEN>"},
+		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
@@ -126,6 +131,12 @@ func main() {
 	}{
 		{"PlakarKorp", "plakar"},
 		{"PlakarKorp", "kloset"},
+		{"PlakarKorp", "kapsul"},
+		{"PlakarKorp", "go-cdc-chunkers"},
+		{"PlakarKorp", "go-kloset-sdk"},
+		{"PlakarKorp", "integration-notion"},
+		{"PlakarKorp", "integration-imap"},
+		{"PlakarKorp", "integration-rclone"},
 	}
 
 	for _, repo := range repos {
