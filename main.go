@@ -31,6 +31,9 @@ func createRepoMetrics(repoLabel string) map[string]prometheus.Gauge {
 	labels["openIssues"] = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "github_repo_open_issues_" + repoLabel,
 	})
+	labels["closedIssues"] = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_repo_closed_issues_" + repoLabel,
+	})
 	labels["subscribers"] = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "github_repo_subscribers_" + repoLabel,
 	})
@@ -48,6 +51,21 @@ func createRepoMetrics(repoLabel string) map[string]prometheus.Gauge {
 	})
 	labels["lastCommitTimestamp"] = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "github_repo_last_commit_timestamp_" + repoLabel,
+	})
+	labels["mergedPRs"] = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_repo_merged_pull_requests_" + repoLabel,
+	})
+	labels["assignedIssues"] = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_repo_assigned_issues_" + repoLabel,
+	})
+	labels["unassignedIssues"] = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_repo_unassigned_issues_" + repoLabel,
+	})
+	labels["assignedPRs"] = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_repo_assigned_pull_requests_" + repoLabel,
+	})
+	labels["unassignedPRs"] = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "github_repo_unassigned_pull_requests_" + repoLabel,
 	})
 
 	for _, metric := range labels {
@@ -78,6 +96,28 @@ func fetchRepoStats(owner, repo string, metrics map[string]prometheus.Gauge, cli
 		metrics["forks"].Set(float64(repository.GetForksCount()))
 		metrics["openIssues"].Set(float64(repository.GetOpenIssuesCount()) - float64(prNumber))
 		metrics["subscribers"].Set(float64(repository.GetSubscribersCount()))
+
+		if searchResult, _, err := client.Search.Issues(ctx, "repo:"+owner+"/"+repo+" is:issue is:closed", &github.SearchOptions{}); err == nil {
+			metrics["closedIssues"].Set(float64(searchResult.GetTotal()))
+		}
+
+		if searchResult, _, err := client.Search.Issues(ctx, "repo:"+owner+"/"+repo+" is:pr is:merged", &github.SearchOptions{}); err == nil {
+			metrics["mergedPRs"].Set(float64(searchResult.GetTotal()))
+		}
+
+		if searchResult, _, err := client.Search.Issues(ctx, "repo:"+owner+"/"+repo+" is:issue is:open assignee:*", &github.SearchOptions{}); err == nil {
+			metrics["assignedIssues"].Set(float64(searchResult.GetTotal()))
+		}
+		if searchResult, _, err := client.Search.Issues(ctx, "repo:"+owner+"/"+repo+" is:issue is:open no:assignee", &github.SearchOptions{}); err == nil {
+			metrics["unassignedIssues"].Set(float64(searchResult.GetTotal()))
+		}
+
+		if searchResult, _, err := client.Search.Issues(ctx, "repo:"+owner+"/"+repo+" is:pr is:open assignee:*", &github.SearchOptions{}); err == nil {
+			metrics["assignedPRs"].Set(float64(searchResult.GetTotal()))
+		}
+		if searchResult, _, err := client.Search.Issues(ctx, "repo:"+owner+"/"+repo+" is:pr is:open no:assignee", &github.SearchOptions{}); err == nil {
+			metrics["unassignedPRs"].Set(float64(searchResult.GetTotal()))
+		}
 
 		if views, _, err := client.Repositories.ListTrafficViews(ctx, owner, repo, nil); err == nil {
 			total := 0
