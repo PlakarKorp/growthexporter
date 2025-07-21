@@ -146,6 +146,8 @@ func main() {
 	}
 
 	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/octolens", octolensHandler)
+
 	log.Println("Exporter listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
