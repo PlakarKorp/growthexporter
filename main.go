@@ -61,12 +61,6 @@ func createRepoMetrics(repoLabel string) map[string]prometheus.Gauge {
 	labels["unassignedIssues"] = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "github_repo_unassigned_issues_" + repoLabel,
 	})
-	labels["assignedPRs"] = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "github_repo_assigned_pull_requests_" + repoLabel,
-	})
-	labels["unassignedPRs"] = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "github_repo_unassigned_pull_requests_" + repoLabel,
-	})
 
 	for _, metric := range labels {
 		prometheus.MustRegister(metric)
