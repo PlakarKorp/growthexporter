@@ -15,6 +15,7 @@ type TwitterResponse struct {
 	} `json:"data"`
 }
 
+// /!\ The API endpoint used here is only callable 1 time per 15 minutes
 func GetTwitterFollowers(username, bearerToken string) (int, error) {
 	url := fmt.Sprintf("https://api.twitter.com/2/users/by/username/%s?user.fields=public_metrics", username)
 
