@@ -76,8 +76,8 @@ func fetchGithubStats(ctx context.Context, token string, eventsChannel chan Even
 				events = append(events, newEvent(now, source, fmt.Sprintf("%s/%s", owner, repo), "clones.global.count", int64(clones.GetCount())))
 				events = append(events, newEvent(now, source, fmt.Sprintf("%s/%s", owner, repo), "clones.global.uniques", int64(clones.GetUniques())))
 				for _, point := range clones.Clones {
-					events = append(events, newEvent(point.Timestamp.Time.UTC(), source, fmt.Sprintf("%s/%s", owner, repo), "views.point.count", int64(point.GetCount())))
-					events = append(events, newEvent(point.Timestamp.Time.UTC(), source, fmt.Sprintf("%s/%s", owner, repo), "views.point.uniques", int64(point.GetUniques())))
+					events = append(events, newEvent(point.Timestamp.Time.UTC(), source, fmt.Sprintf("%s/%s", owner, repo), "clones.point.count", int64(point.GetCount())))
+					events = append(events, newEvent(point.Timestamp.Time.UTC(), source, fmt.Sprintf("%s/%s", owner, repo), "clones.point.uniques", int64(point.GetUniques())))
 				}
 			}
 
@@ -90,12 +90,6 @@ func fetchGithubStats(ctx context.Context, token string, eventsChannel chan Even
 
 			if contributors, _, err := client.Repositories.ListContributors(ctx, owner, repo, nil); err == nil {
 				events = append(events, newEvent(now, source, fmt.Sprintf("%s/%s", owner, repo), "contributors.count", int64(len(contributors))))
-			}
-
-			branch := repository.GetDefaultBranch()
-			if commits, _, err := client.Repositories.ListCommits(ctx, owner, repo, &github.CommitsListOptions{SHA: branch, ListOptions: github.ListOptions{PerPage: 1}}); err == nil && len(commits) > 0 {
-				events = append(events, newEvent(now, source, fmt.Sprintf("%s/%s", owner, repo), "commits.count", int64(len(commits))))
-				events = append(events, newEvent(now, source, fmt.Sprintf("%s/%s", owner, repo), "commits.last.timestamp", commits[0].Commit.Committer.GetDate().Unix()))
 			}
 
 			for _, event := range events {
