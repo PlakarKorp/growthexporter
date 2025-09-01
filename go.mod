@@ -3,6 +3,7 @@ module poc_prom
 go 1.24.1
 
 require (
+	github.com/PlakarKorp/go-cursorlog v0.1.4
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/jackc/pgx/v5 v5.7.5
 	golang.org/x/oauth2 v0.30.0

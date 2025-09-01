@@ -1,3 +1,5 @@
+github.com/PlakarKorp/go-cursorlog v0.1.4 h1:gDUMnLfDNIE56voW5+VPfwH9mmg173Zx6HHlew5Jll8=
+github.com/PlakarKorp/go-cursorlog v0.1.4/go.mod h1:1UzBxIld8lKERejq9H8hrMVvX/T0P8x1IAF6CFs+wqU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

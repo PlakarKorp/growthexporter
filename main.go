@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,9 +19,9 @@ type Event struct {
 	Value     int64
 }
 
-func newEvent(source, key, event string, value int64) Event {
+func newEvent(ts time.Time, source, key, event string, value int64) Event {
 	return Event{
-		CreatedAt: time.Now(),
+		CreatedAt: ts,
 		Source:    source,
 		Key:       key,
 		Event:     event,
@@ -28,7 +29,7 @@ func newEvent(source, key, event string, value int64) Event {
 	}
 }
 
-func dbLayer(pool *pgxpool.Pool, eventsChannel chan Event) {
+func dbEventsLayer(pool *pgxpool.Pool, eventsChannel chan Event) {
 	for event := range eventsChannel {
 		fmt.Printf("Event: %+v\n", event)
 		_, err := pool.Exec(context.Background(),
@@ -40,7 +41,32 @@ func dbLayer(pool *pgxpool.Pool, eventsChannel chan Event) {
 	}
 }
 
+func dbNginxLayer(pool *pgxpool.Pool, nginxlogsChannel chan Event) {
+	for event := range nginxlogsChannel {
+		fmt.Printf("Log: %+v\n", event)
+		/*_, err := pool.Exec(context.Background(),
+			`INSERT INTO event_logs (ts, source, key, event, value) VALUES ($1, $2, $3, $4, $5)`,
+			event.CreatedAt, event.Source, event.Key, event.Event, event.Value)
+		if err != nil {
+			log.Printf("Error inserting event into database: %v", err)
+		}
+		*/
+	}
+}
+
 func main() {
+	nginxDir := os.Getenv("NGINX_LOG_DIR")
+	if nginxDir == "" {
+		log.Println("NGINX_LOG_DIR environment variable is not set, exiting.")
+		os.Exit(1)
+	}
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Println("DATABASE_URL environment variable is not set, exiting.")
+		os.Exit(1)
+	}
+
 	githubToken := os.Getenv("GITHUB_TOKEN")
 	if githubToken == "" {
 		log.Println("GITHUB_TOKEN environment variable is not set, exiting.")
@@ -67,10 +93,17 @@ func main() {
 	defer pool.Close()
 
 	eventsChannel := make(chan Event, 100)
+	_ = eventsChannel
+	//go dbEventsLayer(pool, eventsChannel)
+	//go fetchGithubStats(ctx, githubToken, eventsChannel, time.Hour)
+	//go fetchDiscordStats(ctx, discordToken, eventsChannel, time.Hour)
 
-	go dbLayer(pool, eventsChannel)
-	go fetchGithubStats(ctx, githubToken, eventsChannel, time.Hour)
-	go fetchDiscordStats(ctx, discordToken, eventsChannel, time.Hour)
+	nginxLogDir, err := filepath.Abs(nginxDir)
+	if err != nil {
+		log.Fatalf("invalid NGINX_LOG_DIR: %v", err)
+	}
+
+	go trackNginxLogs(ctx, databaseURL, nginxLogDir, time.Minute)
 
 	<-make(chan struct{})
 }
