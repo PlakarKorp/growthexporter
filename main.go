@@ -30,13 +30,18 @@ func newEvent(ts time.Time, source, key, event string, value int64) Event {
 }
 
 func dbEventsLayer(pool *pgxpool.Pool, eventsChannel chan Event) {
-	for event := range eventsChannel {
-		fmt.Printf("Event: %+v\n", event)
-		_, err := pool.Exec(context.Background(),
-			`INSERT INTO event_logs (ts, source, key, event, value) VALUES ($1, $2, $3, $4, $5)`,
-			event.CreatedAt, event.Source, event.Key, event.Event, event.Value)
-		if err != nil {
-			log.Printf("Error inserting event into database: %v", err)
+	for ev := range eventsChannel {
+		fmt.Printf("Event: %+v\n", ev)
+
+		const q = `INSERT INTO event_logs (ts, source, key, event, value)
+					VALUES ($1, $2, $3, $4, $5)
+					ON CONFLICT (source, key, event, ts)
+					DO UPDATE SET value = EXCLUDED.value`
+
+		if _, err := pool.Exec(context.Background(), q,
+			ev.CreatedAt, ev.Source, ev.Key, ev.Event, ev.Value,
+		); err != nil {
+			log.Printf("Error upserting event into database: %v", err)
 		}
 	}
 }
@@ -94,9 +99,9 @@ func main() {
 
 	eventsChannel := make(chan Event, 100)
 	_ = eventsChannel
-	//go dbEventsLayer(pool, eventsChannel)
-	//go fetchGithubStats(ctx, githubToken, eventsChannel, time.Hour)
-	//go fetchDiscordStats(ctx, discordToken, eventsChannel, time.Hour)
+	go dbEventsLayer(pool, eventsChannel)
+	go fetchGithubStats(ctx, githubToken, eventsChannel, time.Hour)
+	go fetchDiscordStats(ctx, discordToken, eventsChannel, time.Hour)
 
 	nginxLogDir, err := filepath.Abs(nginxDir)
 	if err != nil {
