@@ -25,7 +25,11 @@ func listFiles(root string) ([]string, error) {
 			// Stop walking if we can’t access something
 			return err
 		}
-		if !d.IsDir() {
+		if d.Name() == "cursor_state.json" {
+			return nil
+		}
+
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".json") {
 			files = append(files, path)
 		}
 		return nil
